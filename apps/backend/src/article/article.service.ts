@@ -149,17 +149,21 @@ export class ArticleService {
   }
 
   async create(userId: number, dto: CreateArticleDto) {
-    const user = await this.userRepository.findOne(
-      { id: userId },
-      { populate: ['followers', 'favorites', 'articles'] },
-    );
-    const article = new Article(user!, dto.title, dto.description, dto.body);
-    article.tagList.push(...dto.tagList);
-    user?.articles.add(article);
-    await this.em.flush();
+  const user = await this.userRepository.findOne(
+    { id: userId },
+    { populate: ['followers', 'favorites', 'articles'] },
+  );
+  const article = new Article(user!, dto.title, dto.description, dto.body);
 
-    return { article: article.toJSON(user!) };
-  }
+  // Split the string of tags into an array and trim whitespace from each tag
+  const tags = dto.tagList.split(',').map(tag => tag.trim());
+  article.tagList.push(...tags); // Add the processed tags to the article's tag list
+
+  user?.articles.add(article);
+  await this.em.flush();
+
+  return { article: article.toJSON(user!) };
+}
 
   async update(userId: number, slug: string, articleData: any): Promise<IArticleRO> {
     const user = await this.userRepository.findOne(
